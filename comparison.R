@@ -14,13 +14,13 @@ run_comparison <- function() {
   )
   
   # Algoritmos para comparação
-  algorithms <- c("GA_Padrão", "GA_KMeans", "GA_Hierárquico", "GA_DBSCAN", "PSO", "Bat_Algorithm")
-  
+  algorithms <- c("GA_Padrão", "GA_KMeans", "GA_Hierárquico", "GA_DBSCAN", "PSO", "Bat_Algorithm", "BAT_PSO_Hybrid")
+
   # Armazenamento de resultados
   results <- array(NA, dim = c(length(functions), length(algorithms), execs))
   convergence_data <- list()
-  
-  cat("Iniciando experimento de comparação (GA vs PSO vs Bat Algorithm)...\n")
+
+  cat("Iniciando experimento de comparação (GA vs PSO vs Bat Algorithm vs BAT-PSO Híbrido)...\n")
   
   for(f_idx in 1:length(functions)) {
     func_info <- functions[[f_idx]]
@@ -50,16 +50,16 @@ run_comparison <- function() {
           result <- PSO(func, lb, ub, pop.size, dimension, max.it)
         } else if(algorithm == "Bat_Algorithm") {
           result <- BatAlgorithm(func, lb, ub, pop.size, dimension, max.it)
+        } else if(algorithm == "BAT_PSO_Hybrid") {
+          result <- BAT_PSO_Hybrid(func, lb, ub, pop.size, dimension, max.it)
         }
         
         # Armazenamento do melhor resultado
-        if(algorithm %in% c("PSO", "Bat_Algorithm")) {
-          if(algorithm == "PSO") {
-            results[f_idx, alg_idx, exec] <- result$gbest_fitness
-          } else {
-            results[f_idx, alg_idx, exec] <- result$best_fitness
-          }
-        } else {
+        if(algorithm == "PSO") {
+          results[f_idx, alg_idx, exec] <- result$gbest_fitness
+        } else if (algorithm %in% c("Bat_Algorithm", "BAT_PSO_Hybrid")) {
+          results[f_idx, alg_idx, exec] <- result$best_fitness
+        } else { # For GA algorithms
           results[f_idx, alg_idx, exec] <- min(result$fit)
         }
         
@@ -82,7 +82,7 @@ perform_statistical_analysis <- function(experiment_results) {
   algorithms <- experiment_results$algorithms
   
   cat("\n============================================================================\n")
-  cat("ANÁLISE ESTATÍSTICA - GA vs PSO vs BAT ALGORITHM\n")
+  cat("ANÁLISE ESTATÍSTICA - GA vs PSO vs BAT ALGORITHM vs BAT-PSO HÍBRIDO\n")
   cat("============================================================================\n")
   
   for(f_idx in 1:length(functions)) {
@@ -195,7 +195,7 @@ create_visualization <- function(experiment_results) {
   par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
   
   # Gráficos de convergência
-  colors <- c("black", "red", "blue", "green", "purple", "orange")
+  colors <- c("black", "red", "blue", "green", "purple", "orange", "darkgreen")
   
   for(f_idx in 1:length(functions)) {
     func_name <- names(functions)[f_idx]
