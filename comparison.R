@@ -247,9 +247,6 @@ create_visualization <- function(experiment_results) {
   algorithms <- experiment_results$algorithms
   results <- experiment_results$results
   
-  # Configuração para os gráficos
-  par(mfrow = c(2, 2), mar = c(4, 4, 3, 1)) 
-  
   # Gráficos de convergência
   colors <- c("black", "red", "blue", "green", "purple", "orange", "darkgreen", "brown") 
   
@@ -271,6 +268,10 @@ create_visualization <- function(experiment_results) {
         }
       }
     }
+    
+    # Gráfico de convergência em PNG
+    png(filename = paste0("convergencia_", gsub(" ", "_", func_name), ".png"), width = 800, height = 600)
+    par(mar = c(4, 4, 3, 1))
     
     if(length(func_convergence) > 0) {
       max_length <- max(sapply(func_convergence, length))
@@ -325,7 +326,11 @@ create_visualization <- function(experiment_results) {
              xlab="Geração", ylab="Melhor Fitness", xlim=c(0, max.it), ylim=c(0,1))
         text(max.it/2, 0.5, "Nenhum dado de convergência disponível")
     }
+    dev.off()
 
+    png(filename = paste0("boxplot_", gsub(" ", "_", func_name), ".png"), width = 800, height = 600)
+    par(mar = c(8, 4, 3, 1))
+    
     data_for_boxplot_list <- list()
     alg_names_for_boxplot <- c()
 
@@ -363,5 +368,6 @@ create_visualization <- function(experiment_results) {
              xlab="Algoritmo", ylab="Fitness Final", xlim=c(0,1), ylim=c(0,1))
         text(0.5, 0.5, "Nenhum dado válido disponível para boxplot")
     }
+    dev.off()
   }
 }
