@@ -1,7 +1,17 @@
 BAT_PSO_Hybrid <- function(func, lb, ub, pop.size = 50, dimension = 10, max.it = 100,
-                           A = 0.7, r = 0.2, Qmin = 0, Qmax = 2, alpha = 0.9, gamma = 0.9,
-                           w = 0.9, c1 = 2.0, c2 = 2.0, w_damp = 0.99,
-                           prob_bat = 0.5) {
+                           # Parâmetros do Bat Algorithm
+                           A = 0.2422741,
+                           r = 0.8776998,
+                           Qmin = 0, Qmax = 2,
+                           alpha = 0.9295661,
+                           gamma = 0.8822333,
+                           # Parâmetros do PSO
+                           w = 0.8339623,
+                           c1 = 0.8904942,
+                           c2 = 2.2953754,
+                           w_damp = 0.99,
+                           # Parâmetro Híbrido
+                           prob_bat = 0.3877847) {
 
   # Inicialização da população (morcegos/partículas)
   bats <- matrix(runif(pop.size * dimension), nrow = pop.size)
