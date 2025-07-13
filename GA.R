@@ -209,7 +209,7 @@ GA_Penalized <- function(func, lb, ub, pop.size = 50, dimension = 10, max.it = 1
   penalty_term <- current_penalty_factor * average_fitness_generation * violations
   fitness <- fitness_raw + penalty_term
 
-  best_history <- rep(NA, max.it
+  best_history <- rep(NA, max.it)
   
   for(it in 1:max.it){
     # Seleção
