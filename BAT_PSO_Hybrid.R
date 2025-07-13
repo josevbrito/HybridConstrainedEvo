@@ -1,6 +1,7 @@
 BAT_PSO_Hybrid <- function(func, lb, ub, pop.size = 50, dimension = 10, max.it = 100,
-                           A = 0.5, r = 0.5, Qmin = 0, Qmax = 2, alpha = 0.9, gamma = 0.9,
-                           w = 0.9, c1 = 2.0, c2 = 2.0, w_damp = 0.99) {
+                           A = 0.7, r = 0.2, Qmin = 0, Qmax = 2, alpha = 0.9, gamma = 0.9,
+                           w = 0.9, c1 = 2.0, c2 = 2.0, w_damp = 0.99,
+                           prob_bat = 0.5) {
 
   # Inicialização da população (morcegos/partículas)
   bats <- matrix(runif(pop.size * dimension), nrow = pop.size)
@@ -35,56 +36,57 @@ BAT_PSO_Hybrid <- function(func, lb, ub, pop.size = 50, dimension = 10, max.it =
 
   for(it in 1:max.it) {
     for(i in 1:pop.size) {
-      # === Atualização inspirada no Bat Algorithm ===
-      frequency[i] <- Qmin + (Qmax - Qmin) * runif(1)
-      velocity[i, ] <- velocity[i, ] + (bats[i, ] - gbest) * frequency[i] # Usa gbest aqui
+      # Decisão probabilística
+      if (runif(1) < prob_bat) {
+        # === Atualização inspirada no Bat Algorithm ===
+        frequency[i] <- Qmin + (Qmax - Qmin) * runif(1)
+        velocity[i, ] <- velocity[i, ] + (bats[i, ] - gbest) * frequency[i] 
+        
+        # Limita a velocidade
+        max_vel <- abs(ub - lb) * 0.5
+        velocity[i, ] <- pmax(pmin(velocity[i, ], max_vel), -max_vel)
+        
+        # Nova solução candidata
+        new_position <- bats[i, ] + velocity[i, ]
 
-      # Busca local (para Bat Algorithm)
-      if(runif(1) > pulse_rate[i]) {
-        # Perturbação em torno da melhor solução global
-        new_bat_local_search <- gbest + loudness[i] * runif(dimension, -1, 1)
-        new_bat_local_search <- pmax(pmin(new_bat_local_search, ub), lb) # Limites
-        
-        # Avalia a solução da busca local antes de possivelmente usá-la
-        local_search_fitness <- func(new_bat_local_search)
-        
-        # Só aceita a solução da busca local se for melhor que a atual e dentro da probabilidade
-        if (local_search_fitness < fitness[i] && runif(1) < loudness[i]) {
-            bats[i, ] <- new_bat_local_search
-            fitness[i] <- local_search_fitness
-            
-            # Atualiza parâmetros de loudness e pulse_rate se a busca local foi bem sucedida
-            loudness[i] <- alpha * loudness[i]
-            pulse_rate[i] <- r * (1 - exp(-gamma * it))
+        if(runif(1) > pulse_rate[i]) {
+          # Perturbação em torno da melhor solução global
+          new_position <- gbest + loudness[i] * runif(dimension, -1, 1)
         }
+        
+      } else {
+        # === Atualização inspirada no PSO ===
+        r1 <- runif(dimension)
+        r2 <- runif(dimension)
+
+        velocity[i, ] <- current_w * velocity[i, ] +
+                         c1 * r1 * (pbest[i, ] - bats[i, ]) +
+                         c2 * r2 * (gbest - bats[i, ])
+
+        # Limita a velocidade
+        max_vel <- abs(ub - lb) * 0.5
+        velocity[i, ] <- pmax(pmin(velocity[i, ], max_vel), -max_vel)
+        
+        # Nova solução candidata
+        new_position <- bats[i, ] + velocity[i, ]
       }
-
-      # === Atualização inspirada no PSO ===
-      r1 <- runif(dimension)
-      r2 <- runif(dimension)
-
-      velocity[i, ] <- current_w * velocity[i, ] +
-                       c1 * r1 * (pbest[i, ] - bats[i, ]) +
-                       c2 * r2 * (gbest - bats[i, ])
-
-      # Limita a velocidade (opcional, mas recomendado para PSO)
-      max_vel <- abs(ub - lb) * 0.5
-      velocity[i, ] <- pmax(pmin(velocity[i, ], max_vel), -max_vel)
-
-      # Atualiza a posição da partícula/morcego
-      new_position <- bats[i, ] + velocity[i, ]
-      new_position <- pmax(pmin(new_position, ub), lb) # Aplica limites
-
+      
+      # Aplicação dos limites à nova posição
+      new_position <- pmax(pmin(new_position, ub), lb) 
+      
       # Avalia a nova posição
       current_fitness <- func(new_position)
 
-      # === Decisão de aceitação (híbrido) ===
-      # Uma estratégia é aceitar a nova posição se ela for melhor que a atual,
-      # combinando a lógica de aceitação de ambas as meta-heurísticas.
-      # Aqui, priorizamos a melhoria do fitness.
+      # === Decisão de aceitação ===
+      # Aceita a nova posição se ela for melhor que a atual do indivíduo
       if (current_fitness < fitness[i]) {
         bats[i, ] <- new_position
         fitness[i] <- current_fitness
+        
+        if (runif(1) < prob_bat) {
+            loudness[i] <- alpha * loudness[i]
+            pulse_rate[i] <- r * (1 - exp(-gamma * it))
+        }
       }
 
       # Atualização do melhor pessoal (pbest)
@@ -95,13 +97,13 @@ BAT_PSO_Hybrid <- function(func, lb, ub, pop.size = 50, dimension = 10, max.it =
 
       # Atualização do melhor global (gbest)
       if (current_fitness < gbest_fitness) {
-        gbest <- new_position # Atualiza gbest com a nova posição melhor
+        gbest <- new_position
         gbest_fitness <- current_fitness
       }
     }
 
     # Redução do peso da inércia para PSO
-    current_w <- w * w_damp
+    current_w <- current_w * w_damp
 
     # Registro do melhor fitness na iteração
     best_history[it] <- gbest_fitness
